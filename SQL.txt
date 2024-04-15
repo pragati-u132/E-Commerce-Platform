@@ -1,0 +1,108 @@
+CREATE TABLE register (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    confirmpassword VARCHAR(255) NOT NULL,
+     number int,
+    address varchar(20)
+);
+
+CREATE TABLE login (
+    id INT,
+    name VARCHAR(50) NOT NULL,
+   password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (id) REFERENCES register (id) 
+);
+CREATE TABLE cart (
+    cart_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    product_name VARCHAR(50) NOT NULL,
+    quantity INT NOT NULL,
+    payment_option VARCHAR(20),
+    price INT,
+    FOREIGN KEY (user_id) REFERENCES register(user_id),
+);
+
+CREATE TABLE product (
+    product_id INT PRIMARY KEY,
+    prod_name VARCHAR(20),
+    quantity INT,
+    price DECIMAL(10,2)
+);
+
+Procedure : 
+create or replace procedure create_user(mail IN register.email%TYPE,pass IN register.password%TYPE, result OUT int) as
+begin
+result:=0;
+insert into login(email,password) values(mail,pass);
+commit;
+result := 1;
+exception
+when others then
+result := 0;
+rollback;
+end
+
+create or replace procedure get_details(mail IN register.email%TYPE,uname OUT varchar2,phone OUT varchar2,adr OUT varchar2,pwd OUT varchar2) as
+begin
+select name,number,address into uname,phone,adr from register where email=mail;
+select password into pwd from register where email=mail;
+exception
+when others then
+rollback;
+end;
+/
+
+create or replace procedure resetcart(emailin in register.email%TYPE,result out int) as
+BEGIN
+	delete from cart where email=emailin;
+	result:=1;
+	exception
+	when others then
+	result:=0;
+	rollback;
+END
+
+
+Function : 
+CREATE OR REPLACE function tot_amt(cid IN register.id%type) return int as tot_amt int;
+cursor c_shop is select price,quantity from cart where user_id=cid;
+r_shop c_shop%rowtype;
+begin
+tot_amt:=0;
+open c_shop;
+loop
+fetch c_shop into r_shop;
+if c_shop%notfound then
+exit;
+else
+	tot_amt:=tot_amt+(r_shop.price);
+end if;
+end loop;
+close c_shop;
+return tot_amt;
+end;
+/
+
+Trigger : 
+create or replace trigger check_quan before insert on cart
+for each row
+declare
+cursor c_quan is select quantity from product where prod_name = :new.prod_name;
+r_quan c_quan%rowtype;
+begin
+open c_quan;
+loop
+fetch c_quan into r_quan;
+if c_quan%notfound then
+  raise_application_error(-20001,'Quantity not available');
+exit;
+else
+    if (r_quan.quantity<:new.quantity) then
+      raise_application_error(-20001,'Enough quantity not available');
+end if;
+end if;
+end loop;
+close c_quan;
+end;
