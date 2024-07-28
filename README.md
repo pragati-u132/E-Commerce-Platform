@@ -1,6 +1,7 @@
 E-Commerce Platform
 
 Overview
+
 This project is a comprehensive e-commerce platform that includes essential modules such as login, registration, welcome page, product confirmation, and shopping cart. The system has a user-friendly interface for seamless navigation and interaction. All data is persistently saved to ensure a smooth shopping experience.
 
 Features:
